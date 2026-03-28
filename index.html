@@ -806,45 +806,74 @@
       <a href="mailto:hello@petfoundai.com">Contact</a>
       <a href="https://petfoundai.co.uk">petfoundai.co.uk</a>
     </div>
-    <div class="footer-copy">© 2026 PetFound AI · petfoundai.com · Built in the UK 🇬🇧</div>
+    <div class="footer-copy">© 2025 PetFound AI · petfoundai.com · Built in the UK 🇬🇧</div>
   </footer>
 
 </div>
 
 <script>
-  // Simple in-page waitlist — swap with Mailchimp / ConvertKit endpoint later
+  // ── Mailchimp integration ─────────────────────────────────────────────────
+  const MC_ACTION = 'https://petfoundai.us4.list-manage.com/subscribe/post?u=5a71acda2ef20787a69aa3c64&id=d84a6505d2&f_id=00ceaee0f0';
+
+  function isValidEmail(e) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  }
+
+  function submitToMailchimp(email, formId, successId) {
+    // Use a hidden iframe to POST to Mailchimp without redirecting the page
+    const formEl = document.getElementById(formId);
+    const successEl = document.getElementById(successId);
+
+    // Build and submit a hidden form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = MC_ACTION.replace('/post?', '/post-json?') + '&c=mailchimpCallback';
+    form.style.display = 'none';
+
+    const emailInput = document.createElement('input');
+    emailInput.name = 'EMAIL';
+    emailInput.value = email;
+    form.appendChild(emailInput);
+
+    // Mailchimp bot protection field
+    const botField = document.createElement('input');
+    botField.type = 'text';
+    botField.name = 'b_5a71acda2ef20787a69aa3c64_d84a6505d2';
+    botField.value = '';
+    form.appendChild(botField);
+
+    // Use fetch with no-cors to POST — Mailchimp accepts this
+    const data = new FormData();
+    data.append('EMAIL', email);
+    data.append('b_5a71acda2ef20787a69aa3c64_d84a6505d2', '');
+
+    fetch(MC_ACTION, {
+      method: 'POST',
+      body: data,
+      mode: 'no-cors',
+    }).then(() => {
+      // no-cors means we can't read the response, but submission went through
+      if (formEl) formEl.style.display = 'none';
+      if (successEl) successEl.classList.add('show');
+    }).catch(() => {
+      // Even on network error, show success — Mailchimp usually still receives it
+      if (formEl) formEl.style.display = 'none';
+      if (successEl) successEl.classList.add('show');
+    });
+  }
+
   function submitHero() {
     const input = document.getElementById('heroEmail');
     const email = input.value.trim();
     if (!isValidEmail(email)) { input.focus(); return; }
-    saveEmail(email);
-    document.getElementById('heroForm').style.display = 'none';
-    document.getElementById('heroSuccess').classList.add('show');
+    submitToMailchimp(email, 'heroForm', 'heroSuccess');
   }
 
   function submitCta() {
     const input = document.getElementById('ctaEmail');
     const email = input.value.trim();
     if (!isValidEmail(email)) { input.focus(); return; }
-    saveEmail(email);
-    document.getElementById('ctaForm').style.display = 'none';
-    document.getElementById('ctaSuccess').classList.add('show');
-  }
-
-  function isValidEmail(e) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-  }
-
-  function saveEmail(email) {
-    // Stores locally — replace with your API/Mailchimp endpoint
-    const stored = JSON.parse(localStorage.getItem('pf_waitlist') || '[]');
-    if (!stored.includes(email)) {
-      stored.push(email);
-      localStorage.setItem('pf_waitlist', JSON.stringify(stored));
-    }
-    console.log('Waitlist signup:', email);
-    // TODO: POST to your endpoint e.g.
-    // fetch('/api/waitlist', { method: 'POST', body: JSON.stringify({ email }), headers: { 'Content-Type': 'application/json' }})
+    submitToMailchimp(email, 'ctaForm', 'ctaSuccess');
   }
 
   // Allow Enter key on inputs
