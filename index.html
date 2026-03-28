@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PetFound AI — Lost pet. Found.</title>
+  <meta name="description" content="AI-powered lost pet recovery. One photo is all it takes — no microchips, no tags. Launching soon across the UK." />
+  <meta property="og:title" content="PetFound AI — Lost pet. Found." />
+  <meta property="og:description" content="AI-powered lost pet recovery platform. Launching soon in the UK." />
+  <meta property="og:url" content="https://petfoundai.com" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-deep:   #0d3320;
+      --green-mid:    #166534;
+      --green-bright: #16a34a;
+      --green-light:  #dcfce7;
+      --green-glow:   rgba(22, 163, 74, 0.15);
+      --cream:        #fafaf7;
+      --text-primary: #0f1a0f;
+      --text-muted:   #4b6b4b;
+      --text-faint:   #7a9e7a;
+      --white:        #ffffff;
+      --orange:       #ea580c;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── BACKGROUND TEXTURE ─────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(22,163,74,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 90% 80%, rgba(13,51,32,0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Subtle paw pattern */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23166534' fill-opacity='0.04'%3E%3Cellipse cx='15' cy='12' rx='5' ry='6'/%3E%3Cellipse cx='30' cy='8' rx='5' ry='6'/%3E%3Cellipse cx='45' cy='12' rx='5' ry='6'/%3E%3Cpath d='M30 20c-8 0-14 6-14 14 0 5 5 8 14 8s14-3 14-8c0-8-6-14-14-14z'/%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────────────── */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* ── NAVBAR ─────────────────────────────────────────── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid rgba(22,101,52,0.1);
+      background: rgba(250,250,247,0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: var(--green-mid);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(22,101,52,0.3);
+    }
+
+    .brand-logo svg { width: 18px; height: 18px; fill: white; }
+
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+
+    .brand-name span { color: var(--green-bright); }
+
+    .nav-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-light);
+      border: 1px solid rgba(22,101,52,0.2);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green-mid);
+      letter-spacing: 0.3px;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green-bright);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px 60px;
+      max-width: 760px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 1px solid rgba(22,101,52,0.15);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green-mid);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      animation: fadeUp 0.7s 0.1s ease both;
+    }
+
+    .eyebrow-icon { font-size: 14px; }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(44px, 8vw, 76px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    h1 .accent {
+      color: var(--green-bright);
+      position: relative;
+    }
+
+    h1 .accent::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green-bright), transparent);
+      border-radius: 2px;
+    }
+
+    .tagline {
+      font-size: clamp(16px, 2.5vw, 20px);
+      font-weight: 400;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 520px;
+      margin-bottom: 48px;
+      animation: fadeUp 0.7s 0.3s ease both;
+    }
+
+    .tagline strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ── WAITLIST FORM ──────────────────────────────────── */
+    .waitlist-wrap {
+      width: 100%;
+      max-width: 460px;
+      animation: fadeUp 0.7s 0.4s ease both;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+      background: white;
+      border: 1.5px solid rgba(22,101,52,0.2);
+      border-radius: 14px;
+      padding: 6px 6px 6px 18px;
+      box-shadow: 0 4px 20px rgba(22,101,52,0.08), 0 1px 3px rgba(0,0,0,0.05);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-row:focus-within {
+      border-color: var(--green-bright);
+      box-shadow: 0 4px 24px rgba(22,163,74,0.15), 0 0 0 3px rgba(22,163,74,0.08);
+    }
+
+    .form-row input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      background: transparent;
+      padding: 10px 0;
+    }
+
+    .form-row input::placeholder { color: var(--text-faint); }
+
+    .form-row button {
+      background: var(--green-mid);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: 0.2px;
+    }
+
+    .form-row button:hover {
+      background: var(--green-deep);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(22,101,52,0.3);
+    }
+
+    .form-row button:active { transform: translateY(0); }
+
+    .form-note {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* Success state */
+    .success-msg {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--green-light);
+      border: 1px solid rgba(22,101,52,0.2);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--green-mid);
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .success-msg.show { display: flex; }
+    .success-icon { font-size: 18px; }
+
+    /* ── FEATURES STRIP ─────────────────────────────────── */
+    .features {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px 32px;
+      margin-top: 56px;
+      animation: fadeUp 0.7s 0.5s ease both;
+    }
+
+    .feature-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .feature-pill-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .feature-pill-icon.green { background: var(--green-light); }
+    .feature-pill-icon.orange { background: #fff7ed; }
+    .feature-pill-icon.blue { background: #eff6ff; }
+    .feature-pill-icon.slate { background: #f1f5f9; }
+
+    .divider-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(22,101,52,0.2);
+    }
+
+    /* ── SOCIAL PROOF ───────────────────────────────────── */
+    .proof-section {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+      animation: fadeUp 0.7s 0.6s ease both;
+    }
+
+    .proof-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .proof-card {
+      background: white;
+      border: 1px solid rgba(22,101,52,0.1);
+      border-radius: 16px;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .proof-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22,101,52,0.1);
+    }
+
+    .proof-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--green-mid);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .proof-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* ── HOW IT WORKS ───────────────────────────────────── */
+    .how-section {
+      max-width: 760px;
+      margin: 0 auto 0;
+      padding: 0 24px;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--green-bright);
+      margin-bottom: 32px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+
+    .step {
+      background: white;
+      border: 1px solid rgba(22,101,52,0.08);
+      border-radius: 16px;
+      padding: 24px 20px;
+      position: relative;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .step-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green-bright);
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .step-icon {
+      font-size: 24px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .step h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .step p {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── DARK CTA BAND ──────────────────────────────────── */
+    .cta-band {
+      background: linear-gradient(135deg, var(--green-deep) 0%, #0a2a1a 50%, #071d12 100%);
+      margin: 0 24px 40px;
+      border-radius: 24px;
+      padding: 48px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      max-width: 712px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 20px 60px rgba(13,51,32,0.4);
+    }
+
+    .cta-band::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: -20%;
+      width: 60%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(22,163,74,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-band::after {
+      content: '';
+      position: absolute;
+      bottom: -40%;
+      right: -10%;
+      width: 50%;
+      height: 150%;
+      background: radial-gradient(ellipse, rgba(234,88,12,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-band-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--green-bright);
+      margin-bottom: 16px;
+    }
+
+    .cta-band h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 900;
+      color: white;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-band p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 28px;
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-band-form {
+      display: flex;
+      gap: 10px;
+      max-width: 400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-band-form input {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .cta-band-form input::placeholder { color: rgba(255,255,255,0.35); }
+
+    .cta-band-form input:focus {
+      border-color: rgba(22,163,74,0.6);
+      background: rgba(255,255,255,0.15);
+    }
+
+    .cta-band-form button {
+      background: var(--green-bright);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .cta-band-form button:hover {
+      background: #15803d;
+      transform: translateY(-1px);
+    }
+
+    .cta-success {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--green-light);
+      font-size: 14px;
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-success.show { display: flex; }
+
+    /* ── FOOTER ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid rgba(22,101,52,0.1);
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .footer-brand span { color: var(--green-bright); }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-links a {
+      font-size: 12px;
+      color: var(--text-faint);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--green-mid); }
+
+    .footer-copy {
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+
+    /* ── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 640px) {
+      nav { padding: 16px 20px; }
+      .hero { padding: 56px 20px 40px; }
+      .proof-cards { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .proof-card { padding: 16px 12px; }
+      .proof-number { font-size: 28px; }
+      .steps { grid-template-columns: 1fr; }
+      .cta-band { margin: 0 16px 32px; padding: 36px 24px; }
+      .cta-band-form { flex-direction: column; }
+      footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .features { gap: 10px 20px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrapper">
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="6" cy="6.5" rx="2.8" ry="3.2"/>
+          <ellipse cx="12" cy="4.2" rx="2.8" ry="3.2"/>
+          <ellipse cx="18" cy="6.5" rx="2.8" ry="3.2"/>
+          <path d="M12 10c-4 0-8 3.5-8 8 0 3 3 4.5 8 4.5s8-1.5 8-4.5c0-4.5-4-8-8-8z"/>
+        </svg>
+      </div>
+      <span class="brand-name">PetFound <span>AI</span></span>
+    </a>
+    <div class="nav-badge">
+      <span class="pulse-dot"></span>
+      Launching soon · UK
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <main>
+    <section class="hero">
+
+      <div class="eyebrow">
+        <span class="eyebrow-icon">🐾</span>
+        AI-Powered Pet Recovery · United Kingdom
+      </div>
+
+      <h1>
+        Lost pet.<br/>
+        <span class="accent">Found.</span>
+      </h1>
+
+      <p class="tagline">
+        One photo is all it takes — <strong>no microchips, no tags, no collars.</strong><br/>
+        PetFound AI uses computer vision to reunite missing pets with their families, fast.
+      </p>
+
+      <!-- Waitlist form -->
+      <div class="waitlist-wrap">
+        <div class="form-row" id="heroForm">
+          <input
+            type="email"
+            id="heroEmail"
+            placeholder="Enter your email — be first to know"
+            autocomplete="email"
+          />
+          <button onclick="submitHero()">Join Waitlist →</button>
+        </div>
+        <p class="form-note">🔒 No spam. Early access + launch updates only.</p>
+        <div class="success-msg" id="heroSuccess">
+          <span class="success-icon">✅</span>
+          You're on the list! We'll be in touch before launch.
+        </div>
+      </div>
+
+      <!-- Feature pills -->
+      <div class="features">
+        <div class="feature-pill">
+          <div class="feature-pill-icon green">📸</div>
+          Photo-based AI ID
+        </div>
+        <div class="divider-dot"></div>
+        <div class="feature-pill">
+          <div class="feature-pill-icon orange">🚨</div>
+          Live missing alerts
+        </div>
+        <div class="divider-dot"></div>
+        <div class="feature-pill">
+          <div class="feature-pill-icon blue">🛡️</div>
+          Privacy-first contact
+        </div>
+        <div class="divider-dot"></div>
+        <div class="feature-pill">
+          <div class="feature-pill-icon slate">🗺️</div>
+          UK recovery network
+        </div>
+      </div>
+
+    </section>
+
+    <!-- PROOF CARDS -->
+    <section class="proof-section">
+      <div class="proof-cards">
+        <div class="proof-card">
+          <div class="proof-number">1 photo</div>
+          <div class="proof-label">is all it takes to search the entire network</div>
+        </div>
+        <div class="proof-card">
+          <div class="proof-number">0 tags</div>
+          <div class="proof-label">required — AI works from appearance alone</div>
+        </div>
+        <div class="proof-card">
+          <div class="proof-number">100%</div>
+          <div class="proof-label">owner-controlled privacy on every contact</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-section">
+      <p class="section-label">How it works</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 01</span>
+          <span class="step-icon">📋</span>
+          <h3>Register your pet</h3>
+          <p>Upload 3–6 clear photos. Our AI builds a biometric profile — a digital fingerprint for your pet.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">STEP 02</span>
+          <span class="step-icon">🔍</span>
+          <h3>Finder runs a search</h3>
+          <p>Anyone who finds a pet uploads a photo. The AI searches the entire registered database in seconds.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">STEP 03</span>
+          <span class="step-icon">🏠</span>
+          <h3>Reunited safely</h3>
+          <p>Owner is contacted through a privacy-first system. No personal details exposed until the owner approves.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DARK CTA BAND -->
+    <div class="cta-band">
+      <p class="cta-band-eyebrow">Start Now — It's Free</p>
+      <h2>Protect your pet before<br/>it goes missing.</h2>
+      <p>Join pet owners already on the waitlist. Register your pet the moment we launch — biometric profile ready, recovery activated.</p>
+
+      <div class="cta-band-form" id="ctaForm">
+        <input
+          type="email"
+          id="ctaEmail"
+          placeholder="your@email.com"
+          autocomplete="email"
+        />
+        <button onclick="submitCta()">Notify Me →</button>
+      </div>
+      <div class="cta-success" id="ctaSuccess">
+        <span>✅</span> You're on the list — we'll notify you at launch.
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">PetFound <span>AI</span></div>
+    <div class="footer-links">
+      <a href="mailto:hello@petfoundai.com">Contact</a>
+      <a href="https://petfoundai.co.uk">petfoundai.co.uk</a>
+    </div>
+    <div class="footer-copy">© 2025 PetFound AI · petfoundai.com · Built in the UK 🇬🇧</div>
+  </footer>
+
+</div>
+
+<script>
+  // Simple in-page waitlist — swap with Mailchimp / ConvertKit endpoint later
+  function submitHero() {
+    const input = document.getElementById('heroEmail');
+    const email = input.value.trim();
+    if (!isValidEmail(email)) { input.focus(); return; }
+    saveEmail(email);
+    document.getElementById('heroForm').style.display = 'none';
+    document.getElementById('heroSuccess').classList.add('show');
+  }
+
+  function submitCta() {
+    const input = document.getElementById('ctaEmail');
+    const email = input.value.trim();
+    if (!isValidEmail(email)) { input.focus(); return; }
+    saveEmail(email);
+    document.getElementById('ctaForm').style.display = 'none';
+    document.getElementById('ctaSuccess').classList.add('show');
+  }
+
+  function isValidEmail(e) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  }
+
+  function saveEmail(email) {
+    // Stores locally — replace with your API/Mailchimp endpoint
+    const stored = JSON.parse(localStorage.getItem('pf_waitlist') || '[]');
+    if (!stored.includes(email)) {
+      stored.push(email);
+      localStorage.setItem('pf_waitlist', JSON.stringify(stored));
+    }
+    console.log('Waitlist signup:', email);
+    // TODO: POST to your endpoint e.g.
+    // fetch('/api/waitlist', { method: 'POST', body: JSON.stringify({ email }), headers: { 'Content-Type': 'application/json' }})
+  }
+
+  // Allow Enter key on inputs
+  ['heroEmail', 'ctaEmail'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        id === 'heroEmail' ? submitHero() : submitCta();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
