@@ -812,7 +812,10 @@
 </div>
 
 <script>
-  // ── Supabase waitlist integration ─────────────────────────────────────────
+  // ── Supabase direct integration (no serverless function needed) ───────────
+
+  const SUPABASE_URL = 'https://hkhzognfqlfznngidlpv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhraHpvZ25mcWxmem5uZ2lkbHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1OTA1NzAsImV4cCI6MjA4NjE2NjU3MH0.KdrXUtskTsGbEzH6iV05e9MaCcxKM0-KVPmg8goUQF4';
 
   function isValidEmail(e) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -823,21 +826,26 @@
     const successEl = document.getElementById(successId);
 
     try {
-      const res = await fetch('/api/waitlist', {
+      await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          source: 'petfoundai.com',
+          signed_up_at: new Date().toISOString(),
+        }),
       });
-
-      // Show success regardless — even duplicate emails get a friendly response
-      if (formEl) formEl.style.display = 'none';
-      if (successEl) successEl.classList.add('show');
-
     } catch (err) {
-      // Network error — still show success to avoid frustrating the user
+      console.error('Waitlist error:', err);
+    } finally {
+      // Always show success — duplicate emails (409) are fine
       if (formEl) formEl.style.display = 'none';
       if (successEl) successEl.classList.add('show');
-      console.error('Waitlist error:', err);
     }
   }
 
@@ -855,7 +863,6 @@
     submitToWaitlist(email, 'ctaForm', 'ctaSuccess');
   }
 
-  // Allow Enter key on inputs
   ['heroEmail', 'ctaEmail'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
