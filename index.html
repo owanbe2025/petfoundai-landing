@@ -299,6 +299,14 @@
     .success-msg.show { display: flex; }
     .success-icon { font-size: 18px; }
 
+    /* Waitlist problem message (invalid email, or a signup that wasn't saved) */
+    .form-error {
+      font-size: 12px;
+      color: #b91c1c;
+      margin-top: 10px;
+      text-align: center;
+    }
+
     /* ── FEATURES STRIP ─────────────────────────────────── */
     .features {
       display: flex;
@@ -579,6 +587,8 @@
 
     .cta-success.show { display: flex; }
 
+    .cta-band .form-error { color: #fecaca; position: relative; z-index: 1; }
+
     /* ── FOOTER ─────────────────────────────────────────── */
     footer {
       border-top: 1px solid rgba(22,101,52,0.1);
@@ -702,10 +712,11 @@
           />
           <button onclick="submitHero()">Join Waitlist →</button>
         </div>
+        <p class="form-error" id="heroError" role="alert" hidden></p>
         <p class="form-note">🔒 No spam. Early access + launch updates only.</p>
         <div class="success-msg" id="heroSuccess">
           <span class="success-icon">✅</span>
-          You're on the list! We'll be in touch before launch.
+          <span data-msg>You're on the list. We'll notify you at launch.</span>
         </div>
       </div>
 
@@ -792,8 +803,9 @@
         />
         <button onclick="submitCta()">Notify Me →</button>
       </div>
+      <p class="form-error" id="ctaError" role="alert" hidden></p>
       <div class="cta-success" id="ctaSuccess">
-        <span>✅</span> You're on the list. We'll notify you at launch.
+        <span>✅</span> <span data-msg>You're on the list. We'll notify you at launch.</span>
       </div>
     </div>
 
@@ -817,16 +829,23 @@
   const SUPABASE_URL = 'https://hkhzognfqlfznngidlpv.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhraHpvZ25mcWxmem5uZ2lkbHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1OTA1NzAsImV4cCI6MjA4NjE2NjU3MH0.KdrXUtskTsGbEzH6iV05e9MaCcxKM0-KVPmg8goUQF4';
 
+  const MSG_SAVED = "You're on the list. We'll notify you at launch.";
+  const MSG_ALREADY = "You're already on the list.";
+  const MSG_FAILED = "Sorry, we couldn't save that just now. Please try again in a minute, or email hello@petfoundai.com.";
+  const MSG_INVALID = "Please enter a valid email address.";
+  const TIMEOUT_MS = 10000;
+
   function isValidEmail(e) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
   }
 
-  async function submitToWaitlist(email, formId, successId) {
-    const formEl = document.getElementById(formId);
-    const successEl = document.getElementById(successId);
-
+  // "saved" only for a 2xx response, "already" for a duplicate, "failed" otherwise
+  // (any other status, a network error, or no answer within TIMEOUT_MS).
+  async function saveToWaitlist(email) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -839,28 +858,62 @@
           source: 'petfoundai.com',
           signed_up_at: new Date().toISOString(),
         }),
+        signal: controller.signal,
       });
+      if (res.ok) return 'saved';
+      if (res.status === 409) return 'already';
+      let body = null;
+      try { body = await res.json(); } catch (e) { /* not JSON */ }
+      return body && body.code === '23505' ? 'already' : 'failed';  // unique violation
     } catch (err) {
-      console.error('Waitlist error:', err);
+      return 'failed';
     } finally {
-      // Always show success — duplicate emails (409) are fine
-      if (formEl) formEl.style.display = 'none';
-      if (successEl) successEl.classList.add('show');
+      clearTimeout(timer);
+    }
+  }
+
+  // One handler for both forms. The typed email stays in the field on failure.
+  const pending = {};
+  async function submitToWaitlist(inputId, formId, successId, errorId) {
+    const input = document.getElementById(inputId);
+    const formEl = document.getElementById(formId);
+    const successEl = document.getElementById(successId);
+    const errorEl = document.getElementById(errorId);
+    const button = formEl.querySelector('button');
+    if (pending[formId]) return;
+
+    errorEl.hidden = true;
+    errorEl.textContent = '';
+    const email = input.value.trim();
+    if (!isValidEmail(email)) {
+      errorEl.textContent = MSG_INVALID;
+      errorEl.hidden = false;
+      input.focus();
+      return;
+    }
+
+    pending[formId] = true;
+    button.disabled = true;
+    const result = await saveToWaitlist(email);
+    pending[formId] = false;
+
+    if (result === 'saved' || result === 'already') {
+      successEl.querySelector('[data-msg]').textContent = result === 'saved' ? MSG_SAVED : MSG_ALREADY;
+      formEl.style.display = 'none';
+      successEl.classList.add('show');
+    } else {
+      errorEl.textContent = MSG_FAILED;
+      errorEl.hidden = false;
+      button.disabled = false;
     }
   }
 
   function submitHero() {
-    const input = document.getElementById('heroEmail');
-    const email = input.value.trim();
-    if (!isValidEmail(email)) { input.focus(); return; }
-    submitToWaitlist(email, 'heroForm', 'heroSuccess');
+    submitToWaitlist('heroEmail', 'heroForm', 'heroSuccess', 'heroError');
   }
 
   function submitCta() {
-    const input = document.getElementById('ctaEmail');
-    const email = input.value.trim();
-    if (!isValidEmail(email)) { input.focus(); return; }
-    submitToWaitlist(email, 'ctaForm', 'ctaSuccess');
+    submitToWaitlist('ctaEmail', 'ctaForm', 'ctaSuccess', 'ctaError');
   }
 
   ['heroEmail', 'ctaEmail'].forEach(id => {
