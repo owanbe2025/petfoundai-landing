@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://hkhzognfqlfznngidlpv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhraHpvZ25mcWxmem5uZ2lkbHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1OTA1NzAsImV4cCI6MjA4NjE2NjU3MH0.KdrXUtskTsGbEzH6iV05e9MaCcxKM0-KVPmg8goUQF4';
+const SUPABASE_ANON_KEY = 'sb_publishable_QjPmo__hOgBtRLyVbHnL7g_A3NHIA6a';
 
 export default async function handler(req, res) {
   // CORS headers — allow petfoundai.com to call this
